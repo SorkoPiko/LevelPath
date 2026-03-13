@@ -1,12 +1,11 @@
 #pragma once
 #include <model/AttemptTick.hpp>
-#include <util/ByteUtils.hpp>
-#include <stdfloat>
+#include "Float16.hpp"
 
 struct SerialisedAttemptTick {
-    float x;
-    std::optional<float> y;
-    std::optional<float> rotation;
+    Float16 x;
+    std::optional<Float16> y;
+    std::optional<Float16> rotation;
     std::optional<GameMode> gameMode;
     std::optional<bool> gravityFlipped;
     std::optional<bool> mini;
@@ -15,7 +14,6 @@ struct SerialisedAttemptTick {
 inline void serialize(ByteWriter& writer, SerialisedAttemptTick const& tick) {
     writer << tick.x;
 
-    std::float_t a;
     uint8_t changed_mask = 0;
     if (tick.y) changed_mask |= 1 << 0;
     if (tick.rotation) changed_mask |= 1 << 1;
@@ -27,6 +25,7 @@ inline void serialize(ByteWriter& writer, SerialisedAttemptTick const& tick) {
     if (tick.y) writer << *tick.y;
     if (tick.rotation) writer << *tick.rotation;
 
+    if (!tick.gameMode && !tick.gravityFlipped && !tick.mini) return;
     uint8_t packed_byte = 0;
     if (tick.gameMode) {
         packed_byte |= static_cast<uint8_t>(*tick.gameMode) & 0x7;
@@ -48,6 +47,8 @@ inline void deserialize(ByteReader& reader, SerialisedAttemptTick& tick) {
 
     if (changed_mask & 1 << 0) reader >> tick.y.emplace();
     if (changed_mask & 1 << 1) reader >> tick.rotation.emplace();
+
+    if (!(changed_mask >> 2 & 7)) return;
 
     uint8_t packed_byte;
     reader >> packed_byte;

@@ -53,25 +53,3 @@ void deserialize(ByteReader& reader, T& value) {
     std::memcpy(&value, reader.buffer.data() + reader.offset, sizeof(T));
     reader.offset += sizeof(T);
 }
-
-// std::string
-template <>
-inline void serialize(ByteWriter& writer, const std::string& value) {
-    writer << static_cast<uint32_t>(value.size());
-    const auto offset = writer.buffer.size();
-    writer.buffer.resize(writer.buffer.size() + value.size());
-    std::memcpy(writer.buffer.data() + offset, value.data(), value.size());
-}
-
-template <>
-inline void deserialize(ByteReader& reader, std::string& value) {
-    uint32_t len;
-    reader >> len;
-
-    if (reader.offset + len > reader.buffer.size()) {
-        throw std::runtime_error("Not enough data to deserialize string");
-    }
-
-    value = std::string(reinterpret_cast<const char*>(reader.buffer.data() + reader.offset), len);
-    reader.offset += len;
-}

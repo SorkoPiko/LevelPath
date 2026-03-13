@@ -5,13 +5,22 @@
 
 #include <serialise/Level.hpp>
 
+constexpr uint32_t MAGIC = 0x4C << 24 | 0x50 << 16 | 0x41 << 8 | 0x42;
+
 SaveFuture SaveQueue::createSaveTask(const int levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks) {
     const auto filePath = dirs::getSaveDir() / "attempts" / fmt::format("{}.lpa", levelID);
     Result<ByteVector> existing = file::readBinary(filePath);
     Level level;
     if (existing) {
         ByteReader reader(*existing);
-        reader >> level;
+        uint32_t decodedMagic;
+        reader >> decodedMagic;
+        if (decodedMagic != MAGIC) {
+            log::error("Failed to load existing attempt for level {}: invalid file type", levelID);
+            std::filesystem::rename(filePath, filePath.string() + ".invalid");
+        } else {
+            reader >> level;    
+        }
     }
 
     float lastY = 0.0f;
@@ -23,9 +32,9 @@ SaveFuture SaveQueue::createSaveTask(const int levelID, std::vector<AttemptTick>
     std::vector<SerialisedAttemptTick> serialisedP1Ticks;
     for (const AttemptTick& tick : p1Ticks) {
         serialisedP1Ticks.emplace_back(SerialisedAttemptTick{
-            .x = tick.x,
-            .y = tick.y != lastY ? std::optional(tick.y) : std::nullopt,
-            .rotation = tick.rotation != lastRotation ? std::optional(tick.rotation) : std::nullopt,
+            .x = Float16::fromFloat(tick.x),
+            .y = tick.y != lastY ? std::optional(Float16::fromFloat(tick.y)) : std::nullopt,
+            .rotation = tick.rotation != lastRotation ? std::optional(Float16::fromFloat(tick.rotation)) : std::nullopt,
             .gameMode = tick.gameMode != lastGameMode ? std::optional(tick.gameMode) : std::nullopt,
             .gravityFlipped = tick.gravityFlipped != lastGravityFlipped ? std::optional(tick.gravityFlipped) : std::nullopt,
             .mini = tick.mini != lastMini ? std::optional(tick.mini) : std::nullopt
@@ -46,9 +55,9 @@ SaveFuture SaveQueue::createSaveTask(const int levelID, std::vector<AttemptTick>
     std::vector<SerialisedAttemptTick> serialisedP2Ticks;
     for (const AttemptTick& tick : p2Ticks) {
         serialisedP1Ticks.emplace_back(SerialisedAttemptTick{
-            .x = tick.x,
-            .y = tick.y != lastY ? std::optional(tick.y) : std::nullopt,
-            .rotation = tick.rotation != lastRotation ? std::optional(tick.rotation) : std::nullopt,
+            .x = Float16::fromFloat(tick.x),
+            .y = tick.y != lastY ? std::optional(Float16::fromFloat(tick.y)) : std::nullopt,
+            .rotation = tick.rotation != lastRotation ? std::optional(Float16::fromFloat(tick.rotation)) : std::nullopt,
             .gameMode = tick.gameMode != lastGameMode ? std::optional(tick.gameMode) : std::nullopt,
             .gravityFlipped = tick.gravityFlipped != lastGravityFlipped ? std::optional(tick.gravityFlipped) : std::nullopt,
             .mini = tick.mini != lastMini ? std::optional(tick.mini) : std::nullopt
@@ -66,6 +75,7 @@ SaveFuture SaveQueue::createSaveTask(const int levelID, std::vector<AttemptTick>
     });
 
     ByteWriter writer;
+    writer << MAGIC;
     writer << level;
     if (Result<> write = file::writeBinarySafe(filePath, writer.buffer); !write) {
         log::error("Failed to save attempt for level {}: {}", levelID, write.unwrapErr());
@@ -84,7 +94,11 @@ SaveQueue::SaveQueue() {
             if (!val) break;
 
             auto fut = std::move(val).unwrap();
-            co_await std::move(fut);
+            try {
+                co_await std::move(fut);
+            } catch (const std::exception& e) {
+                log::error("Error in save task: {}", e.what());
+            }
         }
     });
 }

@@ -1,40 +1,34 @@
-#include <Geode/Prelude.hpp>
-#include <Geode/binding/GJGameLevel.hpp>
-#include <Geode/modify/Modify.hpp>
-#include <Geode/modify/PlayLayer.hpp>
-#include <manager/AttemptStorage.hpp>
+#include "PlayLayer.hpp"
 
-using namespace geode::prelude;
+bool LPPlayLayer::init(GJGameLevel* level, const bool useReplay, const bool dontCreateObjects) {
+    if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
 
-class $modify(LPPlayLayer, PlayLayer) {
-    bool init(GJGameLevel* level, const bool useReplay, const bool dontCreateObjects) {
-        if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
+    (void)VMTHookManager::get().addHook<ResolveC<LPPlayLayer>::func(&LPPlayLayer::processQueuedButtons)>(this, "PlayLayer::processQueuedButtons");
+    schedule(schedule_selector(LPPlayLayer::customUpdate), 0.0f, kCCRepeatForever, 0.0f);
 
-        schedule(schedule_selector(LPPlayLayer::customUpdate), 0.0f, kCCRepeatForever, 0.0f);
+    return true;
+}
 
-        return true;
-    }
+void LPPlayLayer::resetLevel() {
+    PlayLayer::resetLevel();
 
-    void resetLevel() {
-        PlayLayer::resetLevel();
+    AttemptStorage& storage = AttemptStorage::get();
+    storage.commit();
+    storage.start(m_level->m_levelID.value());
+}
 
-        AttemptStorage& storage = AttemptStorage::get();
-        storage.commit();
-        storage.start(m_level->m_levelID.value());
-    }
+void LPPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
+    PlayLayer::destroyPlayer(player, object);
+    if (object == m_anticheatSpike) return;
 
-    void destroyPlayer(PlayerObject* player, GameObject* object) {
-        PlayLayer::destroyPlayer(player, object);
-        if (object == m_anticheatSpike) return;
+    AttemptStorage::get().commit();
+}
 
-        AttemptStorage::get().commit();
-    }
+void LPPlayLayer::customUpdate(float) {
+    if (!m_fields->activeLastTick) return;
+    m_fields->activeLastTick = false;
 
-    void customUpdate(float) {
-        if (m_isPaused) return;
-
-        AttemptStorage& storage = AttemptStorage::get();
-        if (m_player1) storage.apply(m_player1, false);
-        if (m_player2) storage.apply(m_player2, true);
-    }
-};
+    AttemptStorage& storage = AttemptStorage::get();
+    if (m_player1) storage.apply(m_player1, false);
+    if (m_player2) storage.apply(m_player2, true);
+}
