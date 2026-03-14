@@ -29,6 +29,10 @@ public:
     void apply(PlayerObject* player, bool secondary);
     void commit();
 
+    SaveQueue& getSaveQueue() {
+        return saveQueue;
+    }
+
     bool isActive() const {
         return active;
     }

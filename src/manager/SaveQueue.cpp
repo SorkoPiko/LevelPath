@@ -16,10 +16,10 @@ SaveFuture SaveQueue::createSaveTask(const int levelID, std::vector<AttemptTick>
         uint32_t decodedMagic;
         reader >> decodedMagic;
         if (decodedMagic != MAGIC) {
-            log::error("Failed to load existing attempt for level {}: invalid file type", levelID);
+            log::error("Failed to load existing data for level {}: invalid file type", levelID);
             std::filesystem::rename(filePath, filePath.string() + ".invalid");
         } else {
-            reader >> level;    
+            reader >> level;
         }
     }
 
@@ -54,7 +54,7 @@ SaveFuture SaveQueue::createSaveTask(const int levelID, std::vector<AttemptTick>
 
     std::vector<SerialisedAttemptTick> serialisedP2Ticks;
     for (const AttemptTick& tick : p2Ticks) {
-        serialisedP1Ticks.emplace_back(SerialisedAttemptTick{
+        serialisedP2Ticks.emplace_back(SerialisedAttemptTick{
             .x = Float16::fromFloat(tick.x),
             .y = tick.y != lastY ? std::optional(Float16::fromFloat(tick.y)) : std::nullopt,
             .rotation = tick.rotation != lastRotation ? std::optional(Float16::fromFloat(tick.rotation)) : std::nullopt,
@@ -84,6 +84,83 @@ SaveFuture SaveQueue::createSaveTask(const int levelID, std::vector<AttemptTick>
     co_return;
 }
 
+LoadFuture SaveQueue::createLoadTask(int levelID) {
+    const auto filePath = dirs::getSaveDir() / "attempts" / fmt::format("{}.lpa", levelID);
+    Result<ByteVector> existing = file::readBinary(filePath);
+    if (!existing) {
+        co_return std::nullopt;
+    }
+    ByteReader reader(*existing);
+    uint32_t decodedMagic;
+    reader >> decodedMagic;
+    if (decodedMagic != MAGIC) {
+        log::error("Failed to load existing data for level {}: invalid file type", levelID);
+        std::filesystem::rename(filePath, filePath.string() + ".invalid");
+        co_return std::nullopt;
+    }
+    Level rawLevel;
+    reader >> rawLevel;
+
+    LevelPath levelPath;
+
+    for (const Attempt& attempt : rawLevel.attempts) {
+        float lastY = 0.0f;
+        float lastRotation = 0.0f;
+        auto lastGameMode = GameMode::Cube;
+        bool lastGravityFlipped = false;
+        bool lastMini = false;
+
+        std::vector<AttemptTick> p1Ticks;
+        for (const SerialisedAttemptTick& tick : attempt.p1Ticks) {
+            if (tick.y) lastY = tick.y->toFloat();
+            if (tick.rotation) lastRotation = tick.rotation->toFloat();
+            if (tick.gameMode) lastGameMode = *tick.gameMode;
+            if (tick.gravityFlipped) lastGravityFlipped = *tick.gravityFlipped;
+            if (tick.mini) lastMini = *tick.mini;
+
+            p1Ticks.emplace_back(AttemptTick{
+                .x = tick.x.toFloat(),
+                .y = lastY,
+                .rotation = lastRotation,
+                .gameMode = lastGameMode,
+                .gravityFlipped = lastGravityFlipped,
+                .mini = lastMini
+            });
+        }
+
+        lastY = 0.0f;
+        lastRotation = 0.0f;
+        lastGameMode = GameMode::Cube;
+        lastGravityFlipped = false;
+        lastMini = false;
+
+        std::vector<AttemptTick> p2Ticks;
+        for (const SerialisedAttemptTick& tick : attempt.p2Ticks) {
+            if (tick.y) lastY = tick.y->toFloat();
+            if (tick.rotation) lastRotation = tick.rotation->toFloat();
+            if (tick.gameMode) lastGameMode = *tick.gameMode;
+            if (tick.gravityFlipped) lastGravityFlipped = *tick.gravityFlipped;
+            if (tick.mini) lastMini = *tick.mini;
+
+            p2Ticks.emplace_back(AttemptTick{
+                .x = tick.x.toFloat(),
+                .y = lastY,
+                .rotation = lastRotation,
+                .gameMode = lastGameMode,
+                .gravityFlipped = lastGravityFlipped,
+                .mini = lastMini
+            });
+        }
+
+        levelPath.attempts.emplace_back(PathAttempt{
+            .p1Ticks = std::move(p1Ticks),
+            .p2Ticks = std::move(p2Ticks)
+        });
+    }
+
+    co_return levelPath;
+}
+
 SaveQueue::SaveQueue() {
     auto [tx, rx] = arc::mpsc::channel<SaveFuture>();
     taskSender = tx;
@@ -106,4 +183,11 @@ SaveQueue::SaveQueue() {
 void SaveQueue::scheduleSave(const int levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks) const {
     auto task = createSaveTask(levelID, std::move(p1Ticks), std::move(p2Ticks));
     (void) taskSender->trySend(std::move(task));
+}
+
+void SaveQueue::scheduleLoad(const int levelID, std::function<void(std::optional<LevelPath>)> callback) {
+    async::spawn(
+        createLoadTask(levelID),
+        std::move(callback)
+    );
 }
