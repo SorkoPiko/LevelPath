@@ -1,20 +1,23 @@
 #pragma once
 
 #include <arc/prelude.hpp>
+#include <model/LevelIdentifier.hpp>
 #include <model/LevelPath.hpp>
 
 using SaveFuture = arc::Future<>;
 using LoadFuture = arc::Future<std::optional<LevelPath>>;
+using MigrationFuture = arc::Future<>;
 
 class SaveQueue {
     std::optional<arc::mpsc::Sender<SaveFuture>> taskSender;
 
-    static SaveFuture createSaveTask(int levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks);
-    static LoadFuture createLoadTask(int levelID);
+    static SaveFuture createSaveTask(LevelIdentifier levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks);
+    static LoadFuture createLoadTask(LevelIdentifier levelID);
+    static MigrationFuture createMigrationTask(LevelIdentifier levelID);
 
 public:
     SaveQueue();
 
-    void scheduleSave(int levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks) const;
-    static void scheduleLoad(int levelID, std::function<void(std::optional<LevelPath>)> callback);
+    void scheduleSave(LevelIdentifier levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks) const;
+    static void scheduleLoad(LevelIdentifier levelID, std::function<void(std::optional<LevelPath>)> callback);
 };

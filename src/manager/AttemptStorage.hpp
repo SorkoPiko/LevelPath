@@ -11,7 +11,7 @@ using namespace geode::prelude;
 
 class AttemptStorage {
     bool active = false;
-    int activeID = -1;
+    LevelIdentifier activeID = {-1, GJLevelType::Main};
     std::vector<AttemptTick> p1Ticks;
     std::vector<AttemptTick> p2Ticks;
 
@@ -25,7 +25,7 @@ public:
         return instance;
     }
 
-    void start(int levelID);
+    void start(LevelIdentifier levelID);
     void apply(PlayerObject* player, bool secondary);
     void commit();
 

@@ -7,7 +7,7 @@ AttemptStorage::AttemptStorage() {
     (void) file::createDirectoryAll(dirs::getSaveDir() / "attempts");
 }
 
-void AttemptStorage::start(const int levelID) {
+void AttemptStorage::start(const LevelIdentifier levelID) {
     if (active) {
         if (activeID == levelID) return;
         commit();

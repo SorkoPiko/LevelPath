@@ -1,4 +1,5 @@
 #include "PlayLayer.hpp"
+#include <cvolton.level-id-api/include/EditorIDs.hpp>
 
 bool LPPlayLayer::init(GJGameLevel* level, const bool useReplay, const bool dontCreateObjects) {
     if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
@@ -14,7 +15,8 @@ void LPPlayLayer::resetLevel() {
 
     AttemptStorage& storage = AttemptStorage::get();
     storage.commit();
-    storage.start(m_level->m_levelID.value());
+
+    storage.start(fromLevel(m_level));
 }
 
 void LPPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {

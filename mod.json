@@ -24,6 +24,7 @@
 		"utility"
 	],
 	"dependencies": {
-		"geode.node-ids": ">=v1.23.0"
+		"geode.node-ids": ">=v1.23.0",
+		"cvolton.level-id-api": ">=v2.0.0"
 	}
 }

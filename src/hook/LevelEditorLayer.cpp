@@ -74,7 +74,7 @@ class $modify(LevelEditorLayer) {
         m_fields->pathNode->getSprite()->setBlendFunc({GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA});
         m_fields->pathNode->getSprite()->getTexture()->setAntiAliasTexParameters();
 
-        AttemptStorage::get().getSaveQueue().scheduleLoad(level->m_levelID.value(), [this](const std::optional<LevelPath>& path) {
+        AttemptStorage::get().getSaveQueue().scheduleLoad(fromLevel(m_level), [this](const std::optional<LevelPath>& path) {
             if (!path) return;
 
             m_fields->currentPath = std::move(*path);
@@ -97,16 +97,21 @@ class $modify(LevelEditorLayer) {
             player->disableGlowOutline();
         }
 
+        CCSprite* test = CCSprite::createWithSpriteFrameName("GJ_normalBtn_001.png");
+
         m_fields->pathNode->beginWithClear(0.0, 0.0, 0.0, 0.0);
         for (const PathAttempt& attempt : m_fields->currentPath.attempts) {
             for (const AttemptTick& tick : attempt.p1Ticks) {
+                log::debug("Drawing at {} {}", tick.x, tick.y);
                 player->setPosition({tick.x, tick.y});
+                test->setPosition({tick.x, tick.y});
                 player->setRotation(tick.rotation);
                 player->updatePlayerFrame(getIconID(tick.gameMode), getIconType(tick.gameMode));
                 player->setScale(tick.mini ? 0.6f : 1.0f);
                 player->setScaleY(tick.gravityFlipped ? -std::abs(player->getScaleY()) : std::abs(player->getScaleY()));
 
                 player->visit();
+                test->visit();
             }
         }
 
