@@ -243,10 +243,7 @@ SaveQueue::SaveQueue() {
     taskSender = tx;
 
     arc::spawn([rx = std::move(rx)]() mutable -> arc::Future<> {
-        while (true) {
-            auto val = co_await rx.recv();
-            if (!val) break;
-
+        while (auto val = co_await rx.recv()) {
             auto fut = std::move(val).unwrap();
             try {
                 co_await std::move(fut);
