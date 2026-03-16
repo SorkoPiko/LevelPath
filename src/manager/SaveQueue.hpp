@@ -11,13 +11,13 @@ using MigrationFuture = arc::Future<>;
 class SaveQueue {
     std::optional<arc::mpsc::Sender<SaveFuture>> taskSender;
 
-    static SaveFuture createSaveTask(LevelIdentifier levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks);
+    static SaveFuture createSaveTask(LevelIdentifier levelID, PathAttempt attempt);
     static LoadFuture createLoadTask(LevelIdentifier levelID);
     static MigrationFuture createMigrationTask(LevelIdentifier levelID);
 
 public:
     SaveQueue();
 
-    void scheduleSave(LevelIdentifier levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks) const;
+    void scheduleSave(LevelIdentifier levelID, PathAttempt attempt) const;
     static void scheduleLoad(LevelIdentifier levelID, std::function<void(std::optional<LevelPath>)> callback);
 };

@@ -17,14 +17,13 @@ void AttemptStorage::start(const LevelIdentifier levelID) {
     active = true;
     activeID = levelID;
 
-    p1Ticks.clear();
-    p2Ticks.clear();
+    currentAttempt.emplace();
 }
 
 void AttemptStorage::apply(PlayerObject* player, const bool secondary) {
     if (!active) return;
 
-    std::vector<AttemptTick>& ticks = secondary ? p2Ticks : p1Ticks;
+    std::vector<AttemptTick>& ticks = secondary ? currentAttempt->p2Ticks : currentAttempt->p1Ticks;
 
     ticks.emplace_back(AttemptTick{
         player->getPositionX(), player->getPositionY(),
@@ -36,7 +35,8 @@ void AttemptStorage::apply(PlayerObject* player, const bool secondary) {
 void AttemptStorage::commit() {
     if (!active) return;
     active = false;
-    if (p1Ticks.empty() && p2Ticks.empty()) return;
+    if (currentAttempt->p1Ticks.empty() && currentAttempt->p2Ticks.empty()) return;
 
-    saveQueue.scheduleSave(activeID, std::move(p1Ticks), std::move(p2Ticks));
+    saveQueue.scheduleSave(activeID, std::move(*currentAttempt));
+    currentAttempt.reset();
 }

@@ -11,7 +11,7 @@ std::filesystem::path getPath(const LevelIdentifier& levelID) {
     return dirs::getSaveDir() / "attempts" / fmt::format("{}.lpa", levelID);
 }
 
-SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks) {
+SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, PathAttempt attempt) {
     co_await createMigrationTask(levelID);
 
     const auto filePath = getPath(levelID);
@@ -37,7 +37,7 @@ SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, std::vector<
     bool lastMini = false;
 
     std::vector<SerialisedAttemptTick> serialisedP1Ticks;
-    for (const AttemptTick& tick : p1Ticks) {
+    for (const AttemptTick& tick : attempt.p1Ticks) {
         Float16 x = Float16::fromFloat(tick.x);
         Float16 y = Float16::fromFloat(tick.y);
         Float16 rotation = Float16::fromFloat(tick.rotation);
@@ -67,7 +67,7 @@ SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, std::vector<
     lastMini = false;
 
     std::vector<SerialisedAttemptTick> serialisedP2Ticks;
-    for (const AttemptTick& tick : p2Ticks) {
+    for (const AttemptTick& tick : attempt.p2Ticks) {
         Float16 x = Float16::fromFloat(tick.x);
         Float16 y = Float16::fromFloat(tick.y);
         Float16 rotation = Float16::fromFloat(tick.rotation);
@@ -264,8 +264,8 @@ SaveQueue::SaveQueue() {
     });
 }
 
-void SaveQueue::scheduleSave(const LevelIdentifier levelID, std::vector<AttemptTick> p1Ticks, std::vector<AttemptTick> p2Ticks) const {
-    auto task = createSaveTask(levelID, std::move(p1Ticks), std::move(p2Ticks));
+void SaveQueue::scheduleSave(const LevelIdentifier levelID, PathAttempt attempt) const {
+    auto task = createSaveTask(levelID, std::move(attempt));
     (void) taskSender->trySend(std::move(task));
 }
 

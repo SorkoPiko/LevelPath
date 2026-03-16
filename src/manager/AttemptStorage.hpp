@@ -12,8 +12,7 @@ using namespace geode::prelude;
 class AttemptStorage {
     bool active = false;
     LevelIdentifier activeID = {-1, GJLevelType::Main};
-    std::vector<AttemptTick> p1Ticks;
-    std::vector<AttemptTick> p2Ticks;
+    std::optional<PathAttempt> currentAttempt;
 
     SaveQueue saveQueue;
 
