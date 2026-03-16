@@ -29,7 +29,7 @@ void AttemptStorage::apply(PlayerObject* player, const bool secondary) {
     ticks.emplace_back(AttemptTick{
         player->getPositionX(), player->getPositionY(),
         player->getRotation(),
-        fromPlayer(player), player->m_isUpsideDown, player->m_vehicleSize < 1.0f
+        fromPlayer(player), player->m_mainLayer->getScaleY() < 0.0f, player->m_vehicleSize < 1.0f
     });
 }
 

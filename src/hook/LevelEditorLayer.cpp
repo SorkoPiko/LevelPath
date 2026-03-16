@@ -60,6 +60,7 @@ class $modify(LPLevelEditorLayer, LevelEditorLayer) {
     struct Fields {
         CCRenderTexture* pathNode = nullptr;
         std::optional<LevelPath> currentPath;
+        std::unordered_map<const AttemptTick*, float> nearbyCache;
         CCAffineTransform lastTransform = CCAffineTransformMakeIdentity();
     };
 
@@ -83,6 +84,7 @@ class $modify(LPLevelEditorLayer, LevelEditorLayer) {
 
             log::debug("Loaded path with {} attempts", path->attempts.size());
             m_fields->currentPath = *path;
+            buildPathCache();
         });
 
         schedule(schedule_selector(LPLevelEditorLayer::drawPath), 0.0f, kCCRepeatForever, 0.0f);
@@ -128,6 +130,8 @@ class $modify(LPLevelEditorLayer, LevelEditorLayer) {
 
                 const CCSize content = scale * 40.0f;
                 if (pos.x < 0 - content.width || pos.y < 0 - content.height || pos.x > spriteSize.width + content.width || pos.y > spriteSize.height + content.height) continue;
+
+                player->setOpacity(0.5f / m_fields->nearbyCache[&tick] * 255.0f);
                 player->visit();
             }
         }
@@ -148,12 +152,45 @@ class $modify(LPLevelEditorLayer, LevelEditorLayer) {
 
                 const CCSize content = scale * 40.0f;
                 if (pos.x < 0 - content.width || pos.y < 0 - content.height || pos.x > spriteSize.width + content.width || pos.y > spriteSize.height + content.height) continue;
+
+                player->setOpacity(0.5f / m_fields->nearbyCache[&tick] * 255.0f);
                 player->visit();
             }
         }
 
-
-
         m_fields->pathNode->end();
+    }
+
+    void buildPathCache() {
+        if (!m_fields->currentPath) return;
+
+        const LevelPath& path = *m_fields->currentPath;
+
+        std::vector<const AttemptTick*> allTicks;
+        for (const PathAttempt& attempt : path.attempts) {
+            for (const AttemptTick& tick : attempt.p1Ticks) {
+                allTicks.push_back(&tick);
+            }
+            for (const AttemptTick& tick : attempt.p2Ticks) {
+                allTicks.push_back(&tick);
+            }
+        }
+
+        for (const AttemptTick* tick : allTicks) {
+            float count = 1;
+            for (const AttemptTick* otherTick : allTicks) {
+                if (otherTick == tick) continue;
+
+                constexpr float THRESHOLD = 20.0f;
+                const float dx = tick->x - otherTick->x;
+                const float dy = tick->y - otherTick->y;
+                const float distance = sqrt(dx * dx + dy * dy);
+                if (distance <= THRESHOLD) {
+                    count += (THRESHOLD - distance) / THRESHOLD;
+                }
+            }
+
+            m_fields->nearbyCache[tick] = count;
+        }
     }
 };
