@@ -112,12 +112,11 @@ class $modify(LPLevelEditorLayer, LevelEditorLayer) {
         player->setColor(secondary);
         player->setSecondColor(primary);
 
+        player->m_hasGlow = true;
         if (gameManager->getPlayerGlow()) {
-            player->m_hasGlow = true;
             player->enableCustomGlowColor(gameManager->colorForIdx(gameManager->getPlayerGlowColor()));
         } else {
-            player->m_hasGlow = false;
-            player->disableCustomGlowColor();
+            player->enableCustomGlowColor(primary);
         }
 
         const CCSize spriteSize = m_fields->pathNode->getSprite()->getContentSize();
@@ -150,6 +149,11 @@ class $modify(LPLevelEditorLayer, LevelEditorLayer) {
 
         player->setColor(primary);
         player->setSecondColor(secondary);
+        if (!gameManager->getPlayerGlow()) {
+            player->enableCustomGlowColor(secondary);
+            player->updateGlowColor();
+            player->updatePlayerGlow();
+        }
 
         for (const PathAttempt& attempt : path.attempts) {
             for (const AttemptTick& tick : attempt.p1Ticks) {
