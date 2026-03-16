@@ -52,15 +52,15 @@ inline void deserialize(ByteReader& reader, SerialisedAttemptTick& tick) {
     uint8_t packed_byte;
     reader >> packed_byte;
 
-    if (changed_mask & 1 << 2) {
+    if (changed_mask & 1 << 3) {
         auto gameMode_value = static_cast<GameMode>(packed_byte & 0x7);
         tick.gameMode = gameMode_value;
     }
 
-    if (changed_mask & 1 << 3) {
+    if (changed_mask & 1 << 4) {
         tick.gravityFlipped = packed_byte & 1 << 3;
     }
-    if (changed_mask & 1 << 4) {
+    if (changed_mask & 1 << 5) {
         tick.mini = packed_byte & 1 << 4;
     }
 }

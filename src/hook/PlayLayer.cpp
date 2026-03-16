@@ -23,7 +23,10 @@ void LPPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     PlayLayer::destroyPlayer(player, object);
     if (object == m_anticheatSpike) return;
 
-    AttemptStorage::get().commit();
+    AttemptStorage& storage = AttemptStorage::get();
+    if (m_player1) storage.apply(m_player1, false);
+    if (m_player2 && m_gameState.m_isDualMode) storage.apply(m_player2, true);
+    storage.commit();
 }
 
 void LPPlayLayer::customUpdate(float) {

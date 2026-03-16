@@ -52,44 +52,59 @@ void updateIconType(PlayerObject* player, const GameMode gameMode) {
     player->updatePlayerGlow();
 }
 
-class $modify(LevelEditorLayer) {
+bool transformEquals(const CCAffineTransform& a, const CCAffineTransform& b) {
+    return a.a == b.a && a.b == b.b && a.c == b.c && a.d == b.d && a.tx == b.tx && a.ty == b.ty;
+}
+
+class $modify(LPLevelEditorLayer, LevelEditorLayer) {
     struct Fields {
         CCRenderTexture* pathNode = nullptr;
-        LevelPath currentPath;
+        std::optional<LevelPath> currentPath;
+        CCAffineTransform lastTransform = CCAffineTransformMakeIdentity();
     };
 
     bool init(GJGameLevel* level, const bool noUI) {
         if (!LevelEditorLayer::init(level, noUI)) return false;
 
-        CCNode* parent = m_debugDrawNode->getParent();
         const auto winSize = CCDirector::sharedDirector()->getWinSize();
         m_fields->pathNode = Build<CCRenderTexture>::create(
             winSize.width, winSize.height,
             kCCTexture2DPixelFormat_RGBA8888,
             GL_DEPTH24_STENCIL8
         )
+            .pos(winSize.width / 2, winSize.height / 2)
             .id("level-path-node"_spr)
-            .zOrder(1500)
-            .parent(parent);
+            .parent(this);
         m_fields->pathNode->getSprite()->setBlendFunc({GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA});
         m_fields->pathNode->getSprite()->getTexture()->setAntiAliasTexParameters();
 
         SaveQueue::scheduleLoad(fromLevel(m_level), [this](const std::optional<LevelPath>& path) {
             if (!path) return;
 
+            log::debug("Loaded path with {} attempts", path->attempts.size());
             m_fields->currentPath = *path;
-            drawPath();
         });
+
+        schedule(schedule_selector(LPLevelEditorLayer::drawPath), 0.0f, kCCRepeatForever, 0.0f);
 
         return true;
     }
 
-    void drawPath() {
+    void drawPath(float) {
+        if (!m_fields->currentPath) return;
+
+        if (transformEquals(m_objectLayer->nodeToWorldTransform(), m_fields->lastTransform)) return;
+        m_fields->lastTransform = m_objectLayer->nodeToWorldTransform();
+
+        const LevelPath& path = *m_fields->currentPath;
+
         GameManager* gameManager = GameManager::get();
         SimplePlayer* player = SimplePlayer::create(0);
 
-        player->setColor(gameManager->colorForIdx(gameManager->getPlayerColor()));
-        player->setSecondColor(gameManager->colorForIdx(gameManager->getPlayerColor2()));
+        const ccColor3B primary = gameManager->colorForIdx(gameManager->getPlayerColor());
+        const ccColor3B secondary = gameManager->colorForIdx(gameManager->getPlayerColor2());
+        player->setColor(secondary);
+        player->setSecondColor(primary);
 
         if (gameManager->getPlayerGlow()) {
             player->setGlowOutline(gameManager->colorForIdx(gameManager->getPlayerGlowColor()));
@@ -97,22 +112,47 @@ class $modify(LevelEditorLayer) {
             player->disableGlowOutline();
         }
 
-        addChild(player, 1501);
-
+        const CCSize spriteSize = m_fields->pathNode->getSprite()->getContentSize();
         m_fields->pathNode->beginWithClear(0.0, 0.0, 0.0, 0.0);
-        for (const PathAttempt& attempt : m_fields->currentPath.attempts) {
-            for (const AttemptTick& tick : attempt.p1Ticks) {
-                player->setPosition({tick.x, tick.y});
+
+        for (const PathAttempt& attempt : path.attempts) {
+            for (const AttemptTick& tick : attempt.p2Ticks) {
+                CCPoint pos = CCPointApplyAffineTransform({tick.x, tick.y}, m_fields->lastTransform);
+                if (pos.x < -spriteSize.width || pos.y < -spriteSize.height || pos.x > spriteSize.width * 2.0f || pos.y > spriteSize.height * 2.0f) continue;
+                player->setPosition(pos);
                 player->setRotation(tick.rotation);
                 player->updatePlayerFrame(getIconID(tick.gameMode), getIconType(tick.gameMode));
-                player->setScale(tick.mini ? 0.6f : 1.0f);
-                player->setScaleY(tick.gravityFlipped ? -std::abs(player->getScaleY()) : std::abs(player->getScaleY()));
+                const CCSize scale = CCSizeApplyAffineTransform({1.0f, 1.0f}, m_fields->lastTransform) * (tick.mini ? 0.6f : 1.0f);
+                player->setScaleX(scale.width);
+                player->setScaleY(tick.gravityFlipped ? -scale.height : scale.height);
 
+                const CCSize content = scale * 40.0f;
+                if (pos.x < 0 - content.width || pos.y < 0 - content.height || pos.x > spriteSize.width + content.width || pos.y > spriteSize.height + content.height) continue;
                 player->visit();
             }
         }
 
-        player->removeFromParentAndCleanup(true);
+        player->setColor(primary);
+        player->setSecondColor(secondary);
+
+        for (const PathAttempt& attempt : path.attempts) {
+            for (const AttemptTick& tick : attempt.p1Ticks) {
+                CCPoint pos = CCPointApplyAffineTransform({tick.x, tick.y}, m_fields->lastTransform);
+                if (pos.x < -spriteSize.width || pos.y < -spriteSize.height || pos.x > spriteSize.width * 2.0f || pos.y > spriteSize.height * 2.0f) continue;
+                player->setPosition(pos);
+                player->setRotation(tick.rotation);
+                player->updatePlayerFrame(getIconID(tick.gameMode), getIconType(tick.gameMode));
+                const CCSize scale = CCSizeApplyAffineTransform({1.0f, 1.0f}, m_fields->lastTransform) * (tick.mini ? 0.6f : 1.0f);
+                player->setScaleX(scale.width);
+                player->setScaleY(tick.gravityFlipped ? -scale.height : scale.height);
+
+                const CCSize content = scale * 40.0f;
+                if (pos.x < 0 - content.width || pos.y < 0 - content.height || pos.x > spriteSize.width + content.width || pos.y > spriteSize.height + content.height) continue;
+                player->visit();
+            }
+        }
+
+
 
         m_fields->pathNode->end();
     }
