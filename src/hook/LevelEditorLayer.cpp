@@ -54,7 +54,7 @@ void updateIconType(PlayerObject* player, const GameMode gameMode) {
 
 class $modify(LevelEditorLayer) {
     struct Fields {
-        CCRenderTexture* pathNode;
+        CCRenderTexture* pathNode = nullptr;
         LevelPath currentPath;
     };
 
@@ -62,9 +62,9 @@ class $modify(LevelEditorLayer) {
         if (!LevelEditorLayer::init(level, noUI)) return false;
 
         CCNode* parent = m_debugDrawNode->getParent();
+        const auto winSize = CCDirector::sharedDirector()->getWinSize();
         m_fields->pathNode = Build<CCRenderTexture>::create(
-            parent->getContentWidth(),
-            parent->getContentHeight(),
+            winSize.width, winSize.height,
             kCCTexture2DPixelFormat_RGBA8888,
             GL_DEPTH24_STENCIL8
         )
@@ -74,10 +74,10 @@ class $modify(LevelEditorLayer) {
         m_fields->pathNode->getSprite()->setBlendFunc({GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA});
         m_fields->pathNode->getSprite()->getTexture()->setAntiAliasTexParameters();
 
-        AttemptStorage::get().getSaveQueue().scheduleLoad(fromLevel(m_level), [this](const std::optional<LevelPath>& path) {
+        SaveQueue::scheduleLoad(fromLevel(m_level), [this](const std::optional<LevelPath>& path) {
             if (!path) return;
 
-            m_fields->currentPath = std::move(*path);
+            m_fields->currentPath = *path;
             drawPath();
         });
 
@@ -97,23 +97,22 @@ class $modify(LevelEditorLayer) {
             player->disableGlowOutline();
         }
 
-        CCSprite* test = CCSprite::createWithSpriteFrameName("GJ_normalBtn_001.png");
+        addChild(player, 1501);
 
         m_fields->pathNode->beginWithClear(0.0, 0.0, 0.0, 0.0);
         for (const PathAttempt& attempt : m_fields->currentPath.attempts) {
             for (const AttemptTick& tick : attempt.p1Ticks) {
-                log::debug("Drawing at {} {}", tick.x, tick.y);
                 player->setPosition({tick.x, tick.y});
-                test->setPosition({tick.x, tick.y});
                 player->setRotation(tick.rotation);
                 player->updatePlayerFrame(getIconID(tick.gameMode), getIconType(tick.gameMode));
                 player->setScale(tick.mini ? 0.6f : 1.0f);
                 player->setScaleY(tick.gravityFlipped ? -std::abs(player->getScaleY()) : std::abs(player->getScaleY()));
 
                 player->visit();
-                test->visit();
             }
         }
+
+        player->removeFromParentAndCleanup(true);
 
         m_fields->pathNode->end();
     }

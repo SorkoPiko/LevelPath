@@ -29,51 +29,61 @@ SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, std::vector<
         }
     }
 
-    float lastX = 0.0f;
-    float lastY = 0.0f;
-    float lastRotation = 0.0f;
+    Float16 lastX = Float16::fromFloat(0.0f);
+    Float16 lastY = Float16::fromFloat(0.0f);
+    Float16 lastRotation = Float16::fromFloat(0.0f);
     auto lastGameMode = GameMode::Cube;
     bool lastGravityFlipped = false;
     bool lastMini = false;
 
     std::vector<SerialisedAttemptTick> serialisedP1Ticks;
     for (const AttemptTick& tick : p1Ticks) {
+        Float16 x = Float16::fromFloat(tick.x);
+        Float16 y = Float16::fromFloat(tick.y);
+        Float16 rotation = Float16::fromFloat(tick.rotation);
+
         serialisedP1Ticks.emplace_back(SerialisedAttemptTick{
-            .x = tick.x != lastX ? std::optional(Float16::fromFloat(tick.x)) : std::nullopt,
-            .y = tick.y != lastY ? std::optional(Float16::fromFloat(tick.y)) : std::nullopt,
-            .rotation = tick.rotation != lastRotation ? std::optional(Float16::fromFloat(tick.rotation)) : std::nullopt,
+            .x = x != lastX ? std::optional(x) : std::nullopt,
+            .y = y != lastY ? std::optional(y) : std::nullopt,
+            .rotation = rotation != lastRotation ? std::optional(rotation) : std::nullopt,
             .gameMode = tick.gameMode != lastGameMode ? std::optional(tick.gameMode) : std::nullopt,
             .gravityFlipped = tick.gravityFlipped != lastGravityFlipped ? std::optional(tick.gravityFlipped) : std::nullopt,
             .mini = tick.mini != lastMini ? std::optional(tick.mini) : std::nullopt
         });
-        lastX = tick.x;
-        lastY = tick.y;
-        lastRotation = tick.rotation;
+        lastX = x;
+        lastY = y;
+
+        lastRotation = rotation;
         lastGameMode = tick.gameMode;
         lastGravityFlipped = tick.gravityFlipped;
         lastMini = tick.mini;
     }
 
-    lastX = 0.0f;
-    lastY = 0.0f;
-    lastRotation = 0.0f;
+    lastX = Float16::fromFloat(0.0f);
+    lastY = Float16::fromFloat(0.0f);
+    lastRotation = Float16::fromFloat(0.0f);
     lastGameMode = GameMode::Cube;
     lastGravityFlipped = false;
     lastMini = false;
 
     std::vector<SerialisedAttemptTick> serialisedP2Ticks;
     for (const AttemptTick& tick : p2Ticks) {
+        Float16 x = Float16::fromFloat(tick.x);
+        Float16 y = Float16::fromFloat(tick.y);
+        Float16 rotation = Float16::fromFloat(tick.rotation);
+
         serialisedP2Ticks.emplace_back(SerialisedAttemptTick{
-            .x = tick.x != lastX ? std::optional(Float16::fromFloat(tick.x)) : std::nullopt,
-            .y = tick.y != lastY ? std::optional(Float16::fromFloat(tick.y)) : std::nullopt,
-            .rotation = tick.rotation != lastRotation ? std::optional(Float16::fromFloat(tick.rotation)) : std::nullopt,
+            .x = x != lastX ? std::optional(x) : std::nullopt,
+            .y = y != lastY ? std::optional(y) : std::nullopt,
+            .rotation = rotation != lastRotation ? std::optional(rotation) : std::nullopt,
             .gameMode = tick.gameMode != lastGameMode ? std::optional(tick.gameMode) : std::nullopt,
             .gravityFlipped = tick.gravityFlipped != lastGravityFlipped ? std::optional(tick.gravityFlipped) : std::nullopt,
             .mini = tick.mini != lastMini ? std::optional(tick.mini) : std::nullopt
         });
-        lastX = tick.x;
-        lastY = tick.y;
-        lastRotation = tick.rotation;
+
+        lastX = x;
+        lastY = y;
+        lastRotation = rotation;
         lastGameMode = tick.gameMode;
         lastGravityFlipped = tick.gravityFlipped;
         lastMini = tick.mini;

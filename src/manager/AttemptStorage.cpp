@@ -3,6 +3,8 @@
 #include <Geode/loader/Dirs.hpp>
 #include <Geode/utils/file.hpp>
 
+#include "serialise/Float16.hpp"
+
 AttemptStorage::AttemptStorage() {
     (void) file::createDirectoryAll(dirs::getSaveDir() / "attempts");
 }
@@ -25,7 +27,7 @@ void AttemptStorage::apply(PlayerObject* player, const bool secondary) {
     std::vector<AttemptTick>& ticks = secondary ? p2Ticks : p1Ticks;
 
     ticks.emplace_back(AttemptTick{
-        static_cast<float>(player->m_positionX), static_cast<float>(player->m_positionY),
+        player->getPositionX(), player->getPositionY(),
         player->getRotation(),
         fromPlayer(player), player->m_isUpsideDown, player->m_vehicleSize < 1.0f
     });

@@ -16,7 +16,7 @@ struct Float16 {
         std::memcpy(&bits, &value, sizeof(float));
 
         const uint16_t sign = (bits >> 31) << 15;
-        const uint16_t exponent = (bits >> 23 & 0xFF) - 112;
+        const int exponent = (bits >> 23 & 0xFF) - 112;
         const uint16_t mantissa = bits >> 13 & 0x3FF;
 
         if (exponent <= 0) {
@@ -48,6 +48,10 @@ struct Float16 {
         float result;
         std::memcpy(&result, &value32, sizeof(float));
         return result;
+    }
+
+    bool operator==(const Float16& other) const {
+        return bits == other.bits;
     }
 };
 

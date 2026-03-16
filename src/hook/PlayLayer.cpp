@@ -5,7 +5,7 @@ bool LPPlayLayer::init(GJGameLevel* level, const bool useReplay, const bool dont
     if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
 
     (void)VMTHookManager::get().addHook<ResolveC<LPPlayLayer>::func(&LPPlayLayer::processQueuedButtons)>(this, "PlayLayer::processQueuedButtons");
-    schedule(schedule_selector(LPPlayLayer::customUpdate), 0.0f, kCCRepeatForever, 0.0f);
+    schedule(schedule_selector(LPPlayLayer::customUpdate), 0.05f , kCCRepeatForever, 0.0f);
 
     return true;
 }
@@ -32,5 +32,5 @@ void LPPlayLayer::customUpdate(float) {
 
     AttemptStorage& storage = AttemptStorage::get();
     if (m_player1) storage.apply(m_player1, false);
-    if (m_player2) storage.apply(m_player2, true);
+    if (m_player2 && m_gameState.m_isDualMode) storage.apply(m_player2, true);
 }
