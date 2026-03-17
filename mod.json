@@ -26,5 +26,65 @@
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.0",
 		"cvolton.level-id-api": ">=v2.0.0"
+	},
+	"settings": {
+		"display-category": {
+			"name": "Display Settings",
+			"type": "title",
+			"description": "Control how the mod displays information in-game."
+		},
+		"visible": {
+			"name": "Visible",
+			"type": "bool",
+			"default": true,
+			"description": "Whether the level path is visible in the editor."
+		},
+		"path-opacity": {
+			"name": "Path Opacity",
+			"type": "float",
+			"default": 50,
+			"description": "The opacity of the path.",
+			"min": 0,
+			"max": 100,
+			"control": {
+				"slider": true,
+				"slider-step": 0.5
+			},
+			"enable-if": "visible"
+		},
+		"player-glow": {
+			"name": "Player Glow",
+			"type": "bool",
+			"default": true,
+			"description": "Whether to render glow around players to increase contrast."
+		},
+		"recording-category": {
+			"name": "Recording Settings",
+			"type": "title",
+			"description": "Control how the mod records level paths."
+		},
+		"record-paths": {
+			"name": "Record Paths",
+			"type": "bool",
+			"default": true,
+			"description": "Whether to record level paths when playing levels."
+		},
+		"recording-rate": {
+			"name": "Recording Rate (ticks per second)",
+			"type": "int",
+			"default": 20,
+			"description": "How often to record the level path when playing levels (in ticks per second). <cr>NOTE: increasing this value will drastically increase the amount of disk space used by the mod. Proceed with caution.</c>",
+			"min": 10,
+			"max": 60,
+			"control": {
+				"slider": true
+			},
+			"enable-if": "record-paths"
+		}
+	},
+	"resources": {
+		"sprites": [
+			"resources/*.png"
+		]
 	}
 }
