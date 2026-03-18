@@ -55,7 +55,7 @@ void deserialize(ByteReader& reader, T& value) {
 }
 
 struct ByteSize {
-    double bytes;
+    uint64_t bytes;
 };
 
 template<>

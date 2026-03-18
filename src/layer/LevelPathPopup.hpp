@@ -19,9 +19,13 @@ class LevelPathPopup : public FLAlertLayer {
     Ref<cue::ListNode> list = nullptr;
 
     Ref<CCLabelBMFont> attemptsLabel = nullptr;
+    Ref<CCLabelBMFont> ticksLabel = nullptr;
+    Ref<CCLabelBMFont> sizeLabel = nullptr;
+    Ref<CCLabelBMFont> timeLabel = nullptr;
 
     bool init(GJGameLevel* _level, LevelPath* _levelPath);
 
+    void updateLabels() const;
     void populateAttemptList();
 
     bool ccTouchBegan(CCTouch* touch, CCEvent* event) override;

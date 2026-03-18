@@ -7,6 +7,8 @@
 #include "manager/AttemptStorage.hpp"
 #include "manager/SaveQueue.hpp"
 #include "node/LevelAttemptNode.hpp"
+#include "serialise/Level.hpp"
+#include "util/SerialiseUtils.hpp"
 
 constexpr CCSize POPUP_SIZE = {400.0f, 250.0f};
 
@@ -87,9 +89,79 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
         .id("title")
         .parent(m_buttonMenu);
 
+    attemptsLabel = Build<CCLabelBMFont>::create(
+        "0 attempts",
+        "chatFont.fnt"
+    )
+        .scale(0.8f)
+        .anchorPoint({0.0f, 1.0f})
+        .color({200, 200, 200})
+        .id("attempts-label")
+        .parent(m_mainLayer)
+        .matchPos(inner)
+        .move(inner->getScaledContentSize() / 2.0f + CCSize{10.0f, -10.0f});
+
+    ticksLabel = Build<CCLabelBMFont>::create(
+        "0 ticks stored",
+        "chatFont.fnt"
+    )
+        .scale(0.8f)
+        .anchorPoint({0.0f, 1.0f})
+        .color({200, 200, 200})
+        .id("size-label")
+        .parent(m_mainLayer)
+        .matchPos(attemptsLabel)
+        .move({0.0f, -attemptsLabel->getScaledContentHeight() - 4.0f});
+
+    sizeLabel = Build<CCLabelBMFont>::create(
+        "0B on disk",
+        "chatFont.fnt"
+    )
+        .scale(0.8f)
+        .anchorPoint({0.0f, 1.0f})
+        .color({200, 200, 200})
+        .id("size-label")
+        .parent(m_mainLayer)
+        .matchPos(ticksLabel)
+        .move({0.0f, -ticksLabel->getScaledContentHeight() - 4.0f});
+
+    timeLabel = Build<CCLabelBMFont>::create(
+        "0.0s recorded",
+        "chatFont.fnt"
+    )
+        .scale(0.8f)
+        .anchorPoint({0.0f, 1.0f})
+        .color({200, 200, 200})
+        .id("time-label")
+        .parent(m_mainLayer)
+        .matchPos(sizeLabel)
+        .move({0.0f, -sizeLabel->getScaledContentHeight() - 4.0f});
+
     populateAttemptList();
+    updateLabels();
 
     return true;
+}
+
+void LevelPathPopup::updateLabels() const {
+    size_t attempts = levelPath->attempts.size();
+    attemptsLabel->setString(fmt::format("{} attempt{}", attempts, attempts == 1 ? "" : "s").c_str());
+
+    uint32_t ticks = 0;
+    double totalTime = 0;
+    Level serialisedLevel;
+    for (const PathAttempt& attempt : levelPath->attempts) {
+        serialisedLevel.attempts.push_back(SerialiseUtils::prepareForSerialisation(attempt));
+        ticks += attempt.p1Ticks.size() + attempt.p2Ticks.size();
+        totalTime += attempt.p1Ticks.size() / static_cast<float>(attempt.recordingRate);
+    }
+    ByteSize fileSize;
+    ByteWriter writer;
+    writer << serialisedLevel;
+    fileSize.bytes = writer.buffer.size();
+    ticksLabel->setString(fmt::format("{} tick{} stored", ticks, ticks == 1 ? "" : "s").c_str());
+    sizeLabel->setString(fmt::format("{} on disk", fileSize).c_str());
+    timeLabel->setString(fmt::format("{:.1f}s recorded", totalTime).c_str());
 }
 
 void LevelPathPopup::populateAttemptList() {
@@ -150,4 +222,5 @@ void LevelPathPopup::deleteAttempt(const size_t index) {
     }
     list->removeCell(index);
     list->updateLayout();
+    updateLabels();
 }
