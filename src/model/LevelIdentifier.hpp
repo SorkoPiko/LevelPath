@@ -41,7 +41,7 @@ inline LevelIdentifier fromLevel(GJGameLevel* level) {
     if (type == GJLevelType::Editor) {
         if (levelID > 0) {
             type = GJLevelType::Saved;
-            int storedEditorID = EditorIDs::getID(level);
+            const int storedEditorID = EditorIDs::getID(level);
             if (storedEditorID != levelID) editorID = storedEditorID;
         } else {
             levelID = EditorIDs::getID(level);

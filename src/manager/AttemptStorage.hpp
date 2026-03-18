@@ -1,11 +1,9 @@
 #pragma once
 
-#include <vector>
 #include <Geode/Prelude.hpp>
 #include <Geode/binding/PlayerObject.hpp>
 
 #include "SaveQueue.hpp"
-#include "model/AttemptTick.hpp"
 
 using namespace geode::prelude;
 
@@ -24,7 +22,7 @@ public:
         return instance;
     }
 
-    void start(LevelIdentifier levelID);
+    void start(LevelIdentifier levelID, int recordingRate);
     void apply(PlayerObject* player, bool secondary);
     void commit();
 

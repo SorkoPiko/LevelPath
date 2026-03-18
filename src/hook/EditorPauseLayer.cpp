@@ -3,7 +3,7 @@
 #include <Geode/modify/EditorPauseLayer.hpp>
 #include <UIBuilder.hpp>
 #include <Geode/ui/GeodeUI.hpp>
-#include <layer/LevelPathsPopup.hpp>
+#include <layer/LevelPathPopup.hpp>
 
 #include "LevelEditorLayer.hpp"
 
@@ -15,9 +15,16 @@ class $modify(EditorPauseLayer) {
 
         CCNode* menu = getChildByID("guidelines-menu");
 
+        auto editorLayer = reinterpret_cast<LPLevelEditorLayer*>(layer);
+
         Build(CircleButtonSprite::createWithSpriteFrameName("GJ_lock_001.png", 1.0f, CircleBaseColor::Green, CircleBaseSize::Small))
-            .intoMenuItem([] {
-                openSettingsPopup(Mod::get());
+            .intoMenuItem([editorLayer] {
+                if (editorLayer->m_fields->currentPath) {
+                    const auto popup = LevelPathPopup::create(editorLayer->m_level, &*editorLayer->m_fields->currentPath);
+                    popup->show();
+                } else {
+                    openSettingsPopup(Mod::get());
+                }
             })
             .id("path-button"_spr)
             .parent(menu);

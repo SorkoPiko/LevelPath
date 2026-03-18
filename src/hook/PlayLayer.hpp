@@ -12,6 +12,7 @@ using namespace geode::prelude;
 class $modify(LPPlayLayer, PlayLayer) {
     struct Fields {
         bool activeLastTick = false;
+        int recordingRate = 0;
     };
 
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects);

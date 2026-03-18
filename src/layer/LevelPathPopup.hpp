@@ -6,22 +6,31 @@
 #include <Geode/utils/cocos.hpp>
 #include <model/LevelPath.hpp>
 
+#include "cue/ListNode.hpp"
+
 using namespace geode::prelude;
 
-class LevelPathsPopup : public FLAlertLayer {
+class LevelPathPopup : public FLAlertLayer {
     GJGameLevel* level = nullptr;
-    std::optional<LevelPath> levelPath;
+    LevelPath* levelPath = nullptr;
 
     Ref<NineSlice> bg = nullptr;
     Ref<ListBorders> inner = nullptr;
+    Ref<cue::ListNode> list = nullptr;
     Ref<CCMenu> tabMenu = nullptr;
 
-    bool init(GJGameLevel* _level, std::optional<LevelPath> _levelPath);
+    bool init(GJGameLevel* _level, LevelPath* _levelPath);
+
+    void populateAttemptList();
 
     bool ccTouchBegan(CCTouch* touch, CCEvent* event) override;
 
-    void onClose(CCObject*);
+    void onClose();
 
 public:
-    static LevelPathsPopup* create(GJGameLevel* level, std::optional<LevelPath> levelPath);
+    static LevelPathPopup* create(GJGameLevel* level, LevelPath* levelPath);
+
+    void show() override;
+
+    void deleteAttempt(size_t index);
 };

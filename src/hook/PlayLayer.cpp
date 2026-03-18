@@ -1,34 +1,35 @@
 #include "PlayLayer.hpp"
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
 
-bool record = true;
-
 bool LPPlayLayer::init(GJGameLevel* level, const bool useReplay, const bool dontCreateObjects) {
-    if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
-    record = Mod::get()->getSettingValue<bool>("record-paths");
-    if (!record) return true;
+    m_fields->recordingRate = Mod::get()->getSettingValue<int>("recording-rate");
+    if (!Mod::get()->getSettingValue<bool>("record-paths")) {
+        m_fields->recordingRate = 0;
+    }
 
-    const int recordingRate = Mod::get()->getSettingValue<float>("recording-rate");
+    if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
+
+    if (m_fields->recordingRate <= 0) return true;
 
     (void)VMTHookManager::get().addHook<ResolveC<LPPlayLayer>::func(&LPPlayLayer::processQueuedButtons)>(this, "PlayLayer::processQueuedButtons");
-    schedule(schedule_selector(LPPlayLayer::customUpdate), recordingRate / 60.0f, kCCRepeatForever, 0.0f);
+    schedule(schedule_selector(LPPlayLayer::customUpdate), 1.0f / m_fields->recordingRate, kCCRepeatForever, 0.0f);
 
     return true;
 }
 
 void LPPlayLayer::resetLevel() {
     PlayLayer::resetLevel();
-    if (!record) return;
+    if (m_fields->recordingRate <= 0) return;
 
     AttemptStorage& storage = AttemptStorage::get();
     storage.commit();
 
-    storage.start(fromLevel(m_level));
+    storage.start(fromLevel(m_level), m_fields->recordingRate);
 }
 
 void LPPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     PlayLayer::destroyPlayer(player, object);
-    if (!record) return;
+    if (m_fields->recordingRate <= 0) return;
 
     if (object == m_anticheatSpike) return;
 

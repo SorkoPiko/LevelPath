@@ -4,6 +4,7 @@
 #include <Geode/loader/Mod.hpp>
 
 #include <serialise/Level.hpp>
+#include "util/SerialiseUtils.hpp"
 
 constexpr uint32_t MAGIC = 0x4C << 24 | 0x50 << 16 | 0x41 << 8 | 0x42;
 
@@ -11,7 +12,7 @@ std::filesystem::path getPath(const LevelIdentifier& levelID) {
     return dirs::getSaveDir() / "attempts" / fmt::format("{}.lpa", levelID);
 }
 
-SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, PathAttempt attempt) {
+SaveFuture SaveQueue::createAppendTask(const LevelIdentifier levelID, PathAttempt attempt) {
     co_await createMigrationTask(levelID);
 
     const auto filePath = getPath(levelID);
@@ -29,76 +30,31 @@ SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, PathAttempt 
         }
     }
 
-    Float16 lastX = Float16::fromFloat(0.0f);
-    Float16 lastY = Float16::fromFloat(0.0f);
-    Float16 lastRotation = Float16::fromFloat(0.0f);
-    auto lastGameMode = GameMode::Cube;
-    bool lastGravityFlipped = false;
-    bool lastMini = false;
-
-    std::vector<SerialisedAttemptTick> serialisedP1Ticks;
-    for (const AttemptTick& tick : attempt.p1Ticks) {
-        Float16 x = Float16::fromFloat(tick.x);
-        Float16 y = Float16::fromFloat(tick.y);
-        Float16 rotation = Float16::fromFloat(tick.rotation);
-
-        serialisedP1Ticks.emplace_back(SerialisedAttemptTick{
-            .x = x != lastX ? std::optional(x) : std::nullopt,
-            .y = y != lastY ? std::optional(y) : std::nullopt,
-            .rotation = rotation != lastRotation ? std::optional(rotation) : std::nullopt,
-            .gameMode = tick.gameMode != lastGameMode ? std::optional(tick.gameMode) : std::nullopt,
-            .gravityFlipped = tick.gravityFlipped != lastGravityFlipped ? std::optional(tick.gravityFlipped) : std::nullopt,
-            .mini = tick.mini != lastMini ? std::optional(tick.mini) : std::nullopt
-        });
-        lastX = x;
-        lastY = y;
-
-        lastRotation = rotation;
-        lastGameMode = tick.gameMode;
-        lastGravityFlipped = tick.gravityFlipped;
-        lastMini = tick.mini;
-    }
-
-    lastX = Float16::fromFloat(0.0f);
-    lastY = Float16::fromFloat(0.0f);
-    lastRotation = Float16::fromFloat(0.0f);
-    lastGameMode = GameMode::Cube;
-    lastGravityFlipped = false;
-    lastMini = false;
-
-    std::vector<SerialisedAttemptTick> serialisedP2Ticks;
-    for (const AttemptTick& tick : attempt.p2Ticks) {
-        Float16 x = Float16::fromFloat(tick.x);
-        Float16 y = Float16::fromFloat(tick.y);
-        Float16 rotation = Float16::fromFloat(tick.rotation);
-
-        serialisedP2Ticks.emplace_back(SerialisedAttemptTick{
-            .x = x != lastX ? std::optional(x) : std::nullopt,
-            .y = y != lastY ? std::optional(y) : std::nullopt,
-            .rotation = rotation != lastRotation ? std::optional(rotation) : std::nullopt,
-            .gameMode = tick.gameMode != lastGameMode ? std::optional(tick.gameMode) : std::nullopt,
-            .gravityFlipped = tick.gravityFlipped != lastGravityFlipped ? std::optional(tick.gravityFlipped) : std::nullopt,
-            .mini = tick.mini != lastMini ? std::optional(tick.mini) : std::nullopt
-        });
-
-        lastX = x;
-        lastY = y;
-        lastRotation = rotation;
-        lastGameMode = tick.gameMode;
-        lastGravityFlipped = tick.gravityFlipped;
-        lastMini = tick.mini;
-    }
-
-    level.attempts.emplace_back(Attempt{
-        .p1Ticks = std::move(serialisedP1Ticks),
-        .p2Ticks = std::move(serialisedP2Ticks)
-    });
+    level.attempts.emplace_back(SerialiseUtils::prepareForSerialisation(attempt));
 
     ByteWriter writer;
     writer << MAGIC;
     writer << level;
     if (Result<> write = file::writeBinarySafe(filePath, writer.buffer); !write) {
         log::error("Failed to save attempt for level {}: {}", levelID, write.unwrapErr());
+    }
+
+    co_return;
+}
+
+SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, LevelPath levelPath) {
+    const auto filePath = getPath(levelID);
+    Level level;
+
+    for (const PathAttempt& attempt : levelPath.attempts) {
+        level.attempts.emplace_back(SerialiseUtils::prepareForSerialisation(attempt));
+    }
+
+    ByteWriter writer;
+    writer << MAGIC;
+    writer << level;
+    if (Result<> write = file::writeBinarySafe(filePath, writer.buffer); !write) {
+        log::error("Failed to save level {}: {}", levelID, write.unwrapErr());
     }
 
     co_return;
@@ -179,6 +135,7 @@ LoadFuture SaveQueue::createLoadTask(const LevelIdentifier levelID) {
         }
 
         levelPath.attempts.emplace_back(PathAttempt{
+            .recordingRate = attempt.recordingRate,
             .p1Ticks = std::move(p1Ticks),
             .p2Ticks = std::move(p2Ticks)
         });
@@ -264,8 +221,13 @@ SaveQueue::SaveQueue() {
     });
 }
 
-void SaveQueue::scheduleSave(const LevelIdentifier levelID, PathAttempt attempt) const {
-    auto task = createSaveTask(levelID, std::move(attempt));
+void SaveQueue::scheduleAppend(const LevelIdentifier levelID, PathAttempt attempt) const {
+    auto task = createAppendTask(levelID, std::move(attempt));
+    (void) taskSender->trySend(std::move(task));
+}
+
+void SaveQueue::scheduleSave(const LevelIdentifier levelID, LevelPath levelPath) const {
+    auto task = createSaveTask(levelID, std::move(levelPath));
     (void) taskSender->trySend(std::move(task));
 }
 
