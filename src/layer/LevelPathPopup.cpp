@@ -35,7 +35,7 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
 
     inner = Build<ListBorders>::create()
         .contentSize({POPUP_SIZE.width / 2.0f, POPUP_SIZE.height - 60.0f})
-        .pos(winSize / 2 + CCSize{POPUP_SIZE.width / 4.0f - 15.0f, -15.0f})
+        .pos(winSize / 2 - CCSize{POPUP_SIZE.width / 4.0f - 15.0f, 15.0f})
         .id("inner")
         .zOrder(2)
         .parent(m_mainLayer);
@@ -50,7 +50,7 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
     );
 
     list = Build(cue::ListNode::create(
-        inner->getContentSize() - CCSize{7.0f, 7.5f},
+        inner->getContentSize() - CCSize{7.0f, 7.0f},
         {62, 62, 62, 255},
         cue::ListBorderStyle::None
     ))
@@ -60,14 +60,6 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
         .matchPos(inner);
 
     list->setCellColors(ccColor4B{0, 0, 0, 0}, ccColor4B{51, 51, 51, 255});
-
-    tabMenu = Build<CCMenu>::create()
-        .contentSize(POPUP_SIZE.width - 30.0f, 30.0f)
-        .anchorPoint({0.5f, 1.0f})
-        .ignoreAnchorPointForPos(false)
-        .pos(winSize / 2 + CCSize{0.0f, POPUP_SIZE.height / 2 - 10.0f})
-        .id("tab-menu")
-        .parent(m_mainLayer);
 
     Build(CircleButtonSprite::createWithSpriteFrameName("geode.loader/close.png", 0.85f, CircleBaseColor::Gray))
         .scale(0.75f)
@@ -85,6 +77,14 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
         })
         .pos({POPUP_SIZE.width - 5.0f, POPUP_SIZE.height - 5.0f})
         .id("settings-button")
+        .parent(m_buttonMenu);
+
+    Build<CCLabelBMFont>::create(
+        "Level Paths",
+        "bigFont.fnt"
+    )
+        .pos({POPUP_SIZE.width / 2.0f, POPUP_SIZE.height - 20.0f})
+        .id("title")
         .parent(m_buttonMenu);
 
     populateAttemptList();

@@ -13,12 +13,12 @@ class LevelAttemptNode : public CCNodeRGBA {
     size_t index = 0;
     const PathAttempt* attempt = nullptr;
 
-    CCLabelBMFont* title = nullptr;
-    CCLabelBMFont* tickLabel = nullptr;
-    CCLabelBMFont* lengthLabel = nullptr;
-    CCLabelBMFont* sizeLabel = nullptr;
-    CCMenu* buttonMenu = nullptr;
-    CCMenuItemSpriteExtra* deleteButton = nullptr;
+    Ref<CCLabelBMFont> title = nullptr;
+    Ref<CCLabelBMFont> tickLabel = nullptr;
+    Ref<CCLabelBMFont> lengthLabel = nullptr;
+    Ref<CCLabelBMFont> sizeLabel = nullptr;
+    Ref<CCMenu> buttonMenu = nullptr;
+    Ref<CCMenuItemSpriteExtra> deleteButton = nullptr;
 
     bool init(size_t _index, const PathAttempt* _attempt);
 

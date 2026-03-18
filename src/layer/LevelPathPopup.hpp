@@ -17,7 +17,8 @@ class LevelPathPopup : public FLAlertLayer {
     Ref<NineSlice> bg = nullptr;
     Ref<ListBorders> inner = nullptr;
     Ref<cue::ListNode> list = nullptr;
-    Ref<CCMenu> tabMenu = nullptr;
+
+    Ref<CCLabelBMFont> attemptsLabel = nullptr;
 
     bool init(GJGameLevel* _level, LevelPath* _levelPath);
 
