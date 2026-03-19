@@ -14,6 +14,7 @@ class LevelAttemptNode : public CCNodeRGBA {
     const PathAttempt* attempt = nullptr;
 
     Ref<CCLabelBMFont> title = nullptr;
+    Ref<CCSprite> fromStartIcon = nullptr;
     Ref<CCLabelBMFont> tickLabel = nullptr;
     Ref<CCLabelBMFont> lengthLabel = nullptr;
     Ref<CCLabelBMFont> sizeLabel = nullptr;

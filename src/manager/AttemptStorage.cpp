@@ -9,7 +9,7 @@ AttemptStorage::AttemptStorage() {
     (void) file::createDirectoryAll(dirs::getSaveDir() / "attempts");
 }
 
-void AttemptStorage::start(const LevelIdentifier levelID, const int recordingRate) {
+void AttemptStorage::start(const LevelIdentifier levelID, const int recordingRate, const bool fromStart) {
     if (active) {
         if (activeID == levelID) return;
         commit();
@@ -19,6 +19,7 @@ void AttemptStorage::start(const LevelIdentifier levelID, const int recordingRat
 
     currentAttempt.emplace();
     currentAttempt->recordingRate = std::min(recordingRate, 255);
+    currentAttempt->fromStart = fromStart;
 }
 
 void AttemptStorage::apply(PlayerObject* player, const bool secondary) {

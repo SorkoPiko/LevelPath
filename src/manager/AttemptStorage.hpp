@@ -22,7 +22,7 @@ public:
         return instance;
     }
 
-    void start(LevelIdentifier levelID, int recordingRate);
+    void start(LevelIdentifier levelID, int recordingRate, bool fromStart);
     void apply(PlayerObject* player, bool secondary);
     void commit();
 

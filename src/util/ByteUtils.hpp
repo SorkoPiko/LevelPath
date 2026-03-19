@@ -1,6 +1,9 @@
 #pragma once
 #include <Geode/Prelude.hpp>
 
+#include "Geode/utils/general.hpp"
+#include "serialise/DeserialisationContext.h"
+
 using namespace geode::prelude;
 
 struct ByteWriter {
@@ -28,6 +31,7 @@ void serialize(ByteWriter& writer, T const& value) {
 struct ByteReader {
     ByteSpan buffer;
     size_t offset = 0;
+    DeserialisationContext context;
 
     template <typename T>
     ByteReader& operator>>(T& value) {

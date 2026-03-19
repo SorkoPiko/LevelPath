@@ -6,7 +6,7 @@ struct Level {
 };
 
 inline void serialize(ByteWriter& writer, const Level& level) {
-    writer << static_cast<uint8_t>(1); // version
+    writer << static_cast<uint8_t>(2); // version
 
     writer << static_cast<uint32_t>(level.attempts.size());
     for (auto const& attempt : level.attempts) {
@@ -14,23 +14,15 @@ inline void serialize(ByteWriter& writer, const Level& level) {
     }
 }
 
-inline void deserialize_v1(ByteReader& reader, Level& level) {
+inline void deserialize(ByteReader& reader, Level& level) {
+    uint8_t version;
+    reader >> version;
+    reader.context.version = version;
+
     uint32_t attemptsSize;
     reader >> attemptsSize;
     level.attempts.resize(attemptsSize);
     for (auto& attempt : level.attempts) {
         reader >> attempt;
-    }
-}
-
-inline void deserialize(ByteReader& reader, Level& level) {
-    uint8_t version;
-    reader >> version;
-    switch (version) {
-        case 1:
-            deserialize_v1(reader, level);
-            break;
-        default:
-            throw std::runtime_error("Unsupported file version");
     }
 }

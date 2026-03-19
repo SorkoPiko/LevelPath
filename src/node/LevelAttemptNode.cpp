@@ -22,6 +22,15 @@ bool LevelAttemptNode::init(const size_t _index, const PathAttempt* _attempt) {
         .id("title")
         .parent(this);
 
+    fromStartIcon = Build<CCSprite>::createSpriteName("checkpoint_01_001.png")
+        .scale(0.5f)
+        .anchorPoint({0.0f, 0.5f})
+        .visible(!attempt->fromStart)
+        .id("from-start-icon")
+        .parent(this)
+        .matchPos(title)
+        .move({title->getScaledContentWidth() + 3.0f, -title->getScaledContentHeight() / 2.0f - 1.0f});
+
     tickLabel = Build<CCLabelBMFont>::create(
         fmt::format("{} ticks", attempt->p1Ticks.size()).c_str(),
         "chatFont.fnt"
@@ -67,7 +76,7 @@ bool LevelAttemptNode::init(const size_t _index, const PathAttempt* _attempt) {
         .pos({0.0f, 0.0f})
         .parent(this);
 
-    deleteButton = Build<CCSprite>::createSpriteName("GJ_deleteBtn_001.png")
+    deleteButton = Build<CCSprite>::createSpriteName("GJ_trashBtn_001.png")
         .scale(0.5f)
         .intoMenuItem([this] {
             parentPopup->deleteAttempt(index);
@@ -109,4 +118,5 @@ LevelAttemptNode* LevelAttemptNode::create(LevelPathPopup* parent, const size_t 
 void LevelAttemptNode::updateIndex(const int newIndex) {
     index = newIndex;
     title->setString(fmt::format("Attempt {}", index + 1).c_str());
+    fromStartIcon->setPositionX(title->getPositionX() + title->getScaledContentWidth() + 3.0f);
 }

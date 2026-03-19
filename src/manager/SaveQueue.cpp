@@ -44,8 +44,8 @@ SaveFuture SaveQueue::createAppendTask(const LevelIdentifier levelID, PathAttemp
 
 SaveFuture SaveQueue::createSaveTask(const LevelIdentifier levelID, LevelPath levelPath) {
     const auto filePath = getPath(levelID);
-    Level level;
 
+    Level level;
     for (const PathAttempt& attempt : levelPath.attempts) {
         level.attempts.emplace_back(SerialiseUtils::prepareForSerialisation(attempt));
     }
@@ -80,65 +80,8 @@ LoadFuture SaveQueue::createLoadTask(const LevelIdentifier levelID) {
     reader >> rawLevel;
 
     LevelPath levelPath;
-
     for (const Attempt& attempt : rawLevel.attempts) {
-        float lastX = 0.0f;
-        float lastY = 0.0f;
-        float lastRotation = 0.0f;
-        auto lastGameMode = GameMode::Cube;
-        bool lastGravityFlipped = false;
-        bool lastMini = false;
-
-        std::vector<AttemptTick> p1Ticks;
-        for (const SerialisedAttemptTick& tick : attempt.p1Ticks) {
-            if (tick.x) lastX = tick.x->toFloat();
-            if (tick.y) lastY = tick.y->toFloat();
-            if (tick.rotation) lastRotation = tick.rotation->toFloat();
-            if (tick.gameMode) lastGameMode = *tick.gameMode;
-            if (tick.gravityFlipped) lastGravityFlipped = *tick.gravityFlipped;
-            if (tick.mini) lastMini = *tick.mini;
-
-            p1Ticks.emplace_back(AttemptTick{
-                .x = lastX,
-                .y = lastY,
-                .rotation = lastRotation,
-                .gameMode = lastGameMode,
-                .gravityFlipped = lastGravityFlipped,
-                .mini = lastMini
-            });
-        }
-
-        lastX = 0.0f;
-        lastY = 0.0f;
-        lastRotation = 0.0f;
-        lastGameMode = GameMode::Cube;
-        lastGravityFlipped = false;
-        lastMini = false;
-
-        std::vector<AttemptTick> p2Ticks;
-        for (const SerialisedAttemptTick& tick : attempt.p2Ticks) {
-            if (tick.x) lastX = tick.x->toFloat();
-            if (tick.y) lastY = tick.y->toFloat();
-            if (tick.rotation) lastRotation = tick.rotation->toFloat();
-            if (tick.gameMode) lastGameMode = *tick.gameMode;
-            if (tick.gravityFlipped) lastGravityFlipped = *tick.gravityFlipped;
-            if (tick.mini) lastMini = *tick.mini;
-
-            p2Ticks.emplace_back(AttemptTick{
-                .x = lastX,
-                .y = lastY,
-                .rotation = lastRotation,
-                .gameMode = lastGameMode,
-                .gravityFlipped = lastGravityFlipped,
-                .mini = lastMini
-            });
-        }
-
-        levelPath.attempts.emplace_back(PathAttempt{
-            .recordingRate = attempt.recordingRate,
-            .p1Ticks = std::move(p1Ticks),
-            .p2Ticks = std::move(p2Ticks)
-        });
+        levelPath.attempts.emplace_back(SerialiseUtils::extractFromSerialised(attempt));
     }
 
     co_return levelPath;

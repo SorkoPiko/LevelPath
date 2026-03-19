@@ -24,7 +24,8 @@ void LPPlayLayer::resetLevel() {
     AttemptStorage& storage = AttemptStorage::get();
     storage.commit();
 
-    storage.start(fromLevel(m_level), m_fields->recordingRate);
+    log::debug("resetting level, pos {}", m_player1->getPositionX() == 0.0f);
+    storage.start(fromLevel(m_level), m_fields->recordingRate, m_player1->getPositionX() == 0.0f);
 }
 
 void LPPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {

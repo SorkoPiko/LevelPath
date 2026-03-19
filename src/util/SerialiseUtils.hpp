@@ -68,8 +68,70 @@ public:
 
         return Attempt{
             .recordingRate = static_cast<uint8_t>(attempt.recordingRate),
+            .fromStart = attempt.fromStart,
             .p1Ticks = std::move(serialisedP1Ticks),
             .p2Ticks = std::move(serialisedP2Ticks)
+        };
+    }
+
+    static PathAttempt extractFromSerialised(const Attempt& attempt) {
+        float lastX = 0.0f;
+        float lastY = 0.0f;
+        float lastRotation = 0.0f;
+        auto lastGameMode = GameMode::Cube;
+        bool lastGravityFlipped = false;
+        bool lastMini = false;
+
+        std::vector<AttemptTick> p1Ticks;
+        for (const SerialisedAttemptTick& tick : attempt.p1Ticks) {
+            if (tick.x) lastX = tick.x->toFloat();
+            if (tick.y) lastY = tick.y->toFloat();
+            if (tick.rotation) lastRotation = tick.rotation->toFloat();
+            if (tick.gameMode) lastGameMode = *tick.gameMode;
+            if (tick.gravityFlipped) lastGravityFlipped = *tick.gravityFlipped;
+            if (tick.mini) lastMini = *tick.mini;
+
+            p1Ticks.emplace_back(AttemptTick{
+                .x = lastX,
+                .y = lastY,
+                .rotation = lastRotation,
+                .gameMode = lastGameMode,
+                .gravityFlipped = lastGravityFlipped,
+                .mini = lastMini
+            });
+        }
+
+        lastX = 0.0f;
+        lastY = 0.0f;
+        lastRotation = 0.0f;
+        lastGameMode = GameMode::Cube;
+        lastGravityFlipped = false;
+        lastMini = false;
+
+        std::vector<AttemptTick> p2Ticks;
+        for (const SerialisedAttemptTick& tick : attempt.p2Ticks) {
+            if (tick.x) lastX = tick.x->toFloat();
+            if (tick.y) lastY = tick.y->toFloat();
+            if (tick.rotation) lastRotation = tick.rotation->toFloat();
+            if (tick.gameMode) lastGameMode = *tick.gameMode;
+            if (tick.gravityFlipped) lastGravityFlipped = *tick.gravityFlipped;
+            if (tick.mini) lastMini = *tick.mini;
+
+            p2Ticks.emplace_back(AttemptTick{
+                .x = lastX,
+                .y = lastY,
+                .rotation = lastRotation,
+                .gameMode = lastGameMode,
+                .gravityFlipped = lastGravityFlipped,
+                .mini = lastMini
+            });
+        }
+
+        return PathAttempt{
+            .recordingRate = attempt.recordingRate,
+            .fromStart = attempt.fromStart,
+            .p1Ticks = std::move(p1Ticks),
+            .p2Ticks = std::move(p2Ticks)
         };
     }
 };

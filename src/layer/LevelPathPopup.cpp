@@ -111,7 +111,7 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
         .id("size-label")
         .parent(m_mainLayer)
         .matchPos(attemptsLabel)
-        .move({0.0f, -attemptsLabel->getScaledContentHeight() - 4.0f});
+        .move({0.0f, -attemptsLabel->getScaledContentHeight() - 3.0f});
 
     sizeLabel = Build<CCLabelBMFont>::create(
         "0B on disk",
@@ -123,7 +123,7 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
         .id("size-label")
         .parent(m_mainLayer)
         .matchPos(ticksLabel)
-        .move({0.0f, -ticksLabel->getScaledContentHeight() - 4.0f});
+        .move({0.0f, -ticksLabel->getScaledContentHeight() - 3.0f});
 
     timeLabel = Build<CCLabelBMFont>::create(
         "0.0s recorded",
@@ -135,7 +135,7 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
         .id("time-label")
         .parent(m_mainLayer)
         .matchPos(sizeLabel)
-        .move({0.0f, -sizeLabel->getScaledContentHeight() - 4.0f});
+        .move({0.0f, -sizeLabel->getScaledContentHeight() - 3.0f});
 
     populateAttemptList();
     updateLabels();
