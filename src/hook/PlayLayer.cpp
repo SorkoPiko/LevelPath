@@ -51,8 +51,7 @@ void LPPlayLayer::levelComplete() {
 }
 
 void LPPlayLayer::onQuit() {
-    AttemptStorage& storage = AttemptStorage::get();
-    storage.commit();
+    AttemptStorage::get().commit();
 
     PlayLayer::onQuit();
 }
