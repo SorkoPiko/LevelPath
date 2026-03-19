@@ -40,6 +40,23 @@ void LPPlayLayer::destroyPlayer(PlayerObject* player, GameObject* object) {
     storage.commit();
 }
 
+void LPPlayLayer::levelComplete() {
+    PlayLayer::levelComplete();
+    if (m_fields->recordingRate <= 0) return;
+
+    AttemptStorage& storage = AttemptStorage::get();
+    if (m_player1) storage.apply(m_player1, false);
+    if (m_player2 && m_gameState.m_isDualMode) storage.apply(m_player2, true);
+    storage.commit();
+}
+
+void LPPlayLayer::onQuit() {
+    AttemptStorage& storage = AttemptStorage::get();
+    storage.commit();
+
+    PlayLayer::onQuit();
+}
+
 void LPPlayLayer::customUpdate(float) {
     if (!m_fields->activeLastTick) return;
     m_fields->activeLastTick = false;

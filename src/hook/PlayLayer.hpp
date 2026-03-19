@@ -18,5 +18,8 @@ class $modify(LPPlayLayer, PlayLayer) {
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects);
     void resetLevel();
     void destroyPlayer(PlayerObject* player, GameObject* object);
+    void levelComplete();
+    void onQuit();
+
     void customUpdate(float);
 };
