@@ -7,16 +7,18 @@
 #include "manager/AttemptStorage.hpp"
 #include "manager/SaveQueue.hpp"
 #include "node/LevelAttemptNode.hpp"
+#include "node/SwitchNode.hpp"
 #include "serialise/Level.hpp"
 #include "util/SerialiseUtils.hpp"
 
 constexpr CCSize POPUP_SIZE = {400.0f, 250.0f};
 
-bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
+bool LevelPathPopup::init(LPLevelEditorLayer* _layer) {
     if (!FLAlertLayer::init(75)) return false;
 
-    level = _level;
-    levelPath = _levelPath;
+    layer = _layer;
+    level = _layer->m_level;
+    levelPath = &*_layer->m_fields->currentPath;
 
     const CCSize winSize = CCDirector::sharedDirector()->getWinSize();
 
@@ -37,7 +39,7 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
 
     inner = Build<ListBorders>::create()
         .contentSize({POPUP_SIZE.width / 2.0f, POPUP_SIZE.height - 60.0f})
-        .pos(winSize / 2 - CCSize{POPUP_SIZE.width / 4.0f - 15.0f, 15.0f})
+        .pos(winSize / 2 - CCSize{POPUP_SIZE.width / 4.0f - 15.0f, 10.0f})
         .id("inner")
         .zOrder(2)
         .parent(m_mainLayer);
@@ -137,10 +139,36 @@ bool LevelPathPopup::init(GJGameLevel* _level, LevelPath* _levelPath) {
         .matchPos(sizeLabel)
         .move({0.0f, -sizeLabel->getScaledContentHeight() - 3.0f});
 
+    Build<CCLabelBMFont>::create(
+        "Visibility",
+        "bigFont.fnt"
+    )
+        .scale(0.8f)
+        .anchorPoint({0.5f, 1.0f})
+        .pos({
+            (inner->getPositionX() + inner->getScaledContentWidth() / 2 + 5.0f + winSize.width / 2.0f + POPUP_SIZE.width / 2 - 10.0f) / 2,
+            winSize.height / 2.0f
+        })
+        .id("visibility-label")
+        .parent(m_mainLayer);
+
     populateAttemptList();
     updateLabels();
 
     return true;
+}
+
+void LevelPathPopup::visit() {
+    FLAlertLayer::visit();
+
+    const CCSize winSize = CCDirector::sharedDirector()->getWinSize();
+
+    cocos2d::ccDrawColor4B(0, 0, 0, 80);
+    glLineWidth(5.0f);
+    ccDrawLine(
+        {inner->getPositionX() + inner->getScaledContentWidth() / 2 + 5.0f, winSize.height / 2},
+        winSize / 2 + CCSize{POPUP_SIZE.width / 2 - 10.0f, 0.0f}
+    );
 }
 
 void LevelPathPopup::updateLabels() const {
@@ -166,6 +194,7 @@ void LevelPathPopup::updateLabels() const {
 
 void LevelPathPopup::populateAttemptList() {
     list->clear();
+    layer->m_fields->shownAttempts.resize(levelPath->attempts.size(), true);
     const CCSize cellSize = {list->getContentSize().width, 40.0f};
     for (size_t i = 0; i < levelPath->attempts.size(); ++i) {
         const auto& attempt = levelPath->attempts[i];
@@ -192,9 +221,9 @@ void LevelPathPopup::onClose() {
     removeFromParentAndCleanup(true);
 }
 
-LevelPathPopup* LevelPathPopup::create(GJGameLevel* level, LevelPath* levelPath) {
+LevelPathPopup* LevelPathPopup::create(LPLevelEditorLayer* layer) {
     auto ret = new LevelPathPopup();
-    if (ret->init(level, levelPath)) {
+    if (ret->init(layer)) {
         ret->autorelease();
         return ret;
     }
@@ -211,6 +240,7 @@ void LevelPathPopup::deleteAttempt(const size_t index) {
     if (index >= levelPath->attempts.size()) return;
 
     levelPath->attempts.erase(levelPath->attempts.begin() + index);
+    layer->m_fields->shownAttempts.erase(layer->m_fields->shownAttempts.begin() + index);
     AttemptStorage::get().getSaveQueue().scheduleSave(fromLevel(level), *levelPath);
 
     size_t cellIndex = -1;
@@ -223,4 +253,16 @@ void LevelPathPopup::deleteAttempt(const size_t index) {
     list->removeCell(index);
     list->updateLayout();
     updateLabels();
+}
+
+void LevelPathPopup::handleSelect(const size_t index) const {
+    if (index >= levelPath->attempts.size()) return;
+
+    const bool newVal = !isSelected(index);
+    layer->m_fields->shownAttempts[index] = newVal;
+    dynamic_cast<LevelAttemptNode*>(list->getCell(index)->getInner())->updateSelected(newVal);
+}
+
+bool LevelPathPopup::isSelected(const size_t index) const {
+    return index < layer->m_fields->shownAttempts.size() && layer->m_fields->shownAttempts[index];
 }

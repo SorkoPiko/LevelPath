@@ -20,7 +20,7 @@ class $modify(EditorPauseLayer) {
         Build(CircleButtonSprite::createWithSpriteFrameName("GJ_lock_001.png", 1.0f, CircleBaseColor::Green, CircleBaseSize::Small))
             .intoMenuItem([editorLayer] {
                 if (editorLayer->m_fields->currentPath) {
-                    const auto popup = LevelPathPopup::create(editorLayer->m_level, &*editorLayer->m_fields->currentPath);
+                    const auto popup = LevelPathPopup::create(editorLayer);
                     popup->show();
                 } else {
                     openSettingsPopup(Mod::get());

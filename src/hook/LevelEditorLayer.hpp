@@ -10,10 +10,12 @@ class $modify(LPLevelEditorLayer, LevelEditorLayer) {
     struct Fields {
         CCRenderTexture* pathNode = nullptr;
         std::optional<LevelPath> currentPath;
+        std::vector<bool> shownAttempts;
         std::unordered_map<const AttemptTick*, float> nearbyCache;
 
         CCAffineTransform lastTransform = CCAffineTransformMakeIdentity();
         float lastOpacity = -1.0f;
+        size_t lastShownHash = 0;
     };
 
     bool init(GJGameLevel* level, bool noUI);

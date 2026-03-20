@@ -2,6 +2,7 @@
 #include <Geode/Geode.hpp>
 #include <UIBuilder.hpp>
 
+#include "SwitchNode.hpp"
 #include "layer/LevelPathPopup.hpp"
 #include "util/ByteUtils.hpp"
 #include "util/SerialiseUtils.hpp"
@@ -74,6 +75,7 @@ bool LevelAttemptNode::init(const size_t _index, const PathAttempt* _attempt) {
 
     buttonMenu = Build<CCMenu>::create()
         .pos({0.0f, 0.0f})
+        .id("button-menu")
         .parent(this);
 
     deleteButton = Build<CCSprite>::createSpriteName("GJ_trashBtn_001.png")
@@ -84,6 +86,21 @@ bool LevelAttemptNode::init(const size_t _index, const PathAttempt* _attempt) {
         .pos({getContentWidth() - 20.0f, getContentHeight() / 2.0f})
         .id("delete-button")
         .parent(buttonMenu);
+
+    selectButton = Build<SwitchNode>::create()
+        .with([this](SwitchNode* node) {
+            node->addNode(CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png"));
+            node->addNode(CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png"));
+            node->setActiveIndex(parentPopup->isSelected(index));
+        })
+        .scale(0.5f)
+        .intoMenuItem([this] {
+            parentPopup->handleSelect(index);
+        })
+        .id("select-button")
+        .parent(buttonMenu)
+        .matchPos(deleteButton)
+        .move({-30.0f, 0.0f});
 
     return true;
 }
@@ -119,4 +136,8 @@ void LevelAttemptNode::updateIndex(const int newIndex) {
     index = newIndex;
     title->setString(fmt::format("Attempt {}", index + 1).c_str());
     fromStartIcon->setPositionX(title->getPositionX() + title->getScaledContentWidth() + 3.0f);
+}
+
+void LevelAttemptNode::updateSelected(const bool selected) const {
+    dynamic_cast<SwitchNode*>(selectButton->getNormalImage())->setActiveIndex(selected);
 }

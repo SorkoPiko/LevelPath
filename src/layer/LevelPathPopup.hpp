@@ -7,10 +7,12 @@
 #include <model/LevelPath.hpp>
 
 #include "cue/ListNode.hpp"
+#include "hook/LevelEditorLayer.hpp"
 
 using namespace geode::prelude;
 
 class LevelPathPopup : public FLAlertLayer {
+    LPLevelEditorLayer* layer = nullptr;
     GJGameLevel* level = nullptr;
     LevelPath* levelPath = nullptr;
 
@@ -23,7 +25,8 @@ class LevelPathPopup : public FLAlertLayer {
     Ref<CCLabelBMFont> sizeLabel = nullptr;
     Ref<CCLabelBMFont> timeLabel = nullptr;
 
-    bool init(GJGameLevel* _level, LevelPath* _levelPath);
+    bool init(LPLevelEditorLayer* _layer);
+    void visit() override;
 
     void updateLabels() const;
     void populateAttemptList();
@@ -33,9 +36,12 @@ class LevelPathPopup : public FLAlertLayer {
     void onClose();
 
 public:
-    static LevelPathPopup* create(GJGameLevel* level, LevelPath* levelPath);
+    static LevelPathPopup* create(LPLevelEditorLayer* layer);
 
     void show() override;
 
     void deleteAttempt(size_t index);
+    void handleSelect(size_t index) const;
+
+    bool isSelected(size_t index) const;
 };

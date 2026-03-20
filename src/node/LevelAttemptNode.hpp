@@ -26,7 +26,10 @@ class LevelAttemptNode : public CCNodeRGBA {
     void draw() override;
 
 public:
+    Ref<CCMenuItemSpriteExtra> selectButton = nullptr;
+
     static LevelAttemptNode* create(LevelPathPopup* parent, size_t index, const PathAttempt* attempt, const CCSize &size);
 
     void updateIndex(int newIndex);
+    void updateSelected(bool selected) const;
 };

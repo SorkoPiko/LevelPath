@@ -1,6 +1,7 @@
 #include "LevelEditorLayer.hpp"
 #include <Geode/Geode.hpp>
 #include <UIBuilder.hpp>
+#include <functional>
 
 using namespace geode::prelude;
 
@@ -78,6 +79,7 @@ bool LPLevelEditorLayer::init(GJGameLevel* level, const bool noUI) {
 
         log::debug("Loaded path with {} attempts", path->attempts.size());
         m_fields->currentPath = *path;
+        m_fields->shownAttempts.resize(m_fields->currentPath->attempts.size(), true);
         buildPathCache();
     });
 
@@ -96,9 +98,17 @@ void LPLevelEditorLayer::drawPath(float) {
 
     const float opacity = Mod::get()->getSettingValue<float>("path-opacity");
 
-    if (transformEquals(m_objectLayer->nodeToWorldTransform(), m_fields->lastTransform) && opacity == m_fields->lastOpacity) return;
+    constexpr std::hash<std::vector<bool>> hasher;
+    const size_t shownHash = hasher(m_fields->shownAttempts);
+
+    if (
+        transformEquals(m_objectLayer->nodeToWorldTransform(), m_fields->lastTransform) &&
+        opacity == m_fields->lastOpacity &&
+        shownHash == m_fields->lastShownHash
+    ) return;
     m_fields->lastTransform = m_objectLayer->nodeToWorldTransform();
     m_fields->lastOpacity = opacity;
+    m_fields->lastShownHash = shownHash;
 
     const LevelPath& path = *m_fields->currentPath;
 
@@ -129,7 +139,11 @@ void LPLevelEditorLayer::drawPath(float) {
     auto lastGameMode = GameMode::Cube;
     updateIconType(player, lastGameMode);
 
+    size_t index = -1;
     for (const PathAttempt& attempt : path.attempts) {
+        index++;
+        if (index >= m_fields->shownAttempts.size() || !m_fields->shownAttempts[index]) continue;
+
         for (const AttemptTick& tick : attempt.p2Ticks) {
             CCPoint pos = CCPointApplyAffineTransform({tick.x, tick.y}, m_fields->lastTransform);
             if (pos.x < -spriteSize.width || pos.y < -spriteSize.height || pos.x > spriteSize.width * 2.0f || pos.y > spriteSize.height * 2.0f) continue;
@@ -159,7 +173,11 @@ void LPLevelEditorLayer::drawPath(float) {
         player->updatePlayerGlow();
     }
 
+    index = -1;
     for (const PathAttempt& attempt : path.attempts) {
+        index++;
+        if (index >= m_fields->shownAttempts.size() || !m_fields->shownAttempts[index]) continue;
+
         for (const AttemptTick& tick : attempt.p1Ticks) {
             CCPoint pos = CCPointApplyAffineTransform({tick.x, tick.y}, m_fields->lastTransform);
             if (pos.x < -spriteSize.width || pos.y < -spriteSize.height || pos.x > spriteSize.width * 2.0f || pos.y > spriteSize.height * 2.0f) continue;
